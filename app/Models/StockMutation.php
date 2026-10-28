@@ -29,6 +29,26 @@ class StockMutation extends Model
     ];
 
     /**
+     * Bootstrap the model and its traits.
+     */
+    protected static function booted(): void
+    {
+        static::creating(function (StockMutation $mutation) {
+            $supply = $mutation->supply ?? Supply::find($mutation->supply_id);
+            if ($supply) {
+                $mutation->stock_before = $supply->stock;
+                if ($mutation->type === 'in') {
+                    $mutation->stock_after = $supply->stock + $mutation->quantity;
+                } else {
+                    $mutation->stock_after = max(0, $supply->stock - $mutation->quantity);
+                }
+                $supply->stock = $mutation->stock_after;
+                $supply->save();
+            }
+        });
+    }
+
+    /**
      * Get the supply item for this mutation.
      */
     public function supply(): BelongsTo
@@ -44,4 +64,3 @@ class StockMutation extends Model
         return $this->belongsTo(Room::class);
     }
 }
-

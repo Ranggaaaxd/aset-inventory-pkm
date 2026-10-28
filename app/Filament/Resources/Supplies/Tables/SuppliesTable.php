@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Supplies\Tables;
 
+use App\Models\Supply;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -22,7 +23,9 @@ class SuppliesTable
                     ->searchable(),
                 TextColumn::make('stock')
                     ->numeric()
-                    ->sortable(),
+                    ->sortable()
+                    ->badge()
+                    ->color(fn (?Supply $record): string => $record && $record->stock <= $record->min_stock ? 'danger' : 'success'),
                 TextColumn::make('min_stock')
                     ->numeric()
                     ->sortable(),

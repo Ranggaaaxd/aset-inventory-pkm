@@ -19,7 +19,17 @@ class StockMutationsTable
                 TextColumn::make('room.name')
                     ->searchable(),
                 TextColumn::make('type')
-                    ->badge(),
+                    ->badge()
+                    ->color(fn (string $state): string => match (strtolower($state)) {
+                        'in' => 'success',
+                        'out' => 'danger',
+                        default => 'gray',
+                    })
+                    ->formatStateUsing(fn (string $state): string => match (strtolower($state)) {
+                        'in' => 'IN',
+                        'out' => 'OUT',
+                        default => strtoupper($state),
+                    }),
                 TextColumn::make('quantity')
                     ->numeric()
                     ->sortable(),

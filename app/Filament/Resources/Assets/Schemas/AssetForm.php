@@ -20,12 +20,16 @@ class AssetForm
                     ->required(),
                 Select::make('category_id')
                     ->relationship('category', 'name')
+                    ->searchable()
+                    ->preload()
                     ->default(null),
                 Select::make('room_id')
                     ->relationship('room', 'name')
+                    ->searchable()
+                    ->preload()
                     ->default(null),
                 Select::make('condition')
-                    ->options(['Baik' => 'Baik', 'Rusak Ringan' => 'Rusak ringan', 'Rusak Berat' => 'Rusak berat'])
+                    ->options(['Baik' => 'Baik', 'Rusak Ringan' => 'Rusak Ringan', 'Rusak Berat' => 'Rusak Berat'])
                     ->default('Baik')
                     ->required(),
                 TextInput::make('brand')
@@ -34,7 +38,7 @@ class AssetForm
                 TextInput::make('price')
                     ->numeric()
                     ->default(null)
-                    ->prefix('$'),
+                    ->prefix('Rp'),
                 Textarea::make('notes')
                     ->default(null)
                     ->columnSpanFull(),
