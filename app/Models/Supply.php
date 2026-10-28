@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -9,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Supply extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsActivity;
 
     protected $fillable = [
         'item_code',
@@ -48,6 +49,14 @@ class Supply extends Model
     public function isLowStock(): bool
     {
         return $this->stock <= $this->min_stock;
+    }
+
+    /**
+     * Label representation for activity audit logs.
+     */
+    public function getActivityRecordLabel(): string
+    {
+        return $this->item_code ? "{$this->item_code} - {$this->name}" : $this->name;
     }
 }
 

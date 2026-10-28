@@ -28,6 +28,17 @@ class AssetForm
                     ->searchable()
                     ->preload()
                     ->default(null),
+                TextInput::make('pic_name')
+                    ->label('Nama PIC / Pemegang Barang')
+                    ->placeholder('Contoh: Budi Santoso (kosongkan jika barang bersama)')
+                    ->helperText('Opsional jika barang bersama / fasilitas umum seperti AC, proyektor, atau meja meeting.')
+                    ->maxLength(255),
+                TextInput::make('pic_contact')
+                    ->label('Kontak PIC (No. WhatsApp)')
+                    ->placeholder('Contoh: 08123456789')
+                    ->helperText('Nomor kontak PIC yang dapat dihubungi.')
+                    ->tel()
+                    ->maxLength(50),
                 Select::make('condition')
                     ->options(['Baik' => 'Baik', 'Rusak Ringan' => 'Rusak Ringan', 'Rusak Berat' => 'Rusak Berat'])
                     ->default('Baik')

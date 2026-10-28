@@ -29,8 +29,12 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
+            ->brandName('Pakuan Karya Mandiri')
+            ->brandLogo(fn () => view('filament.components.brand'))
+            ->brandLogoHeight('2.6rem')
             ->colors([
-                'primary' => Color::Amber,
+                'primary' => Color::hex('#0f3b6c'),
+                'gray' => Color::Slate,
             ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')

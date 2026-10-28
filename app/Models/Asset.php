@@ -2,19 +2,22 @@
 
 namespace App\Models;
 
+use App\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Asset extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsActivity;
 
     protected $fillable = [
         'asset_code',
         'name',
         'category_id',
         'room_id',
+        'pic_name',
+        'pic_contact',
         'condition',
         'brand',
         'purchase_date',
@@ -41,6 +44,14 @@ class Asset extends Model
     public function room(): BelongsTo
     {
         return $this->belongsTo(Room::class);
+    }
+
+    /**
+     * Label representation for activity audit logs.
+     */
+    public function getActivityRecordLabel(): string
+    {
+        return "{$this->asset_code} - {$this->name}";
     }
 }
 
