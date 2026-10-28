@@ -3,6 +3,8 @@
 namespace App\Providers\Filament;
 
 use App\Filament\Widgets\StatsOverviewWidget;
+use App\Filament\Widgets\AssetConditionChartWidget;
+use App\Filament\Widgets\MonthlySupplyUsageChartWidget;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -11,6 +13,7 @@ use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
+use Filament\View\PanelsRenderHook;
 use Filament\Widgets\AccountWidget;
 use Filament\Widgets\FilamentInfoWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
@@ -18,6 +21,7 @@ use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
+use Illuminate\Support\HtmlString;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 class AdminPanelProvider extends PanelProvider
@@ -29,9 +33,30 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
+            ->spa()
+            ->unsavedChangesAlerts()
             ->brandName('Pakuan Karya Mandiri')
             ->brandLogo(fn () => view('filament.components.brand'))
             ->brandLogoHeight('2.6rem')
+            ->renderHook(
+                PanelsRenderHook::STYLES_AFTER,
+                fn (): HtmlString => new HtmlString(<<<'HTML'
+                    <style>
+                        .fi-page {
+                            animation: page-fade-in 220ms ease-out both;
+                        }
+
+                        @keyframes page-fade-in {
+                            from { opacity: 0; transform: translateY(4px); }
+                            to { opacity: 1; transform: translateY(0); }
+                        }
+
+                        @media (prefers-reduced-motion: reduce) {
+                            .fi-page { animation: none; }
+                        }
+                    </style>
+                    HTML),
+            )
             ->colors([
                 'primary' => Color::hex('#0f3b6c'),
                 'gray' => Color::Slate,
@@ -44,6 +69,8 @@ class AdminPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
             ->widgets([
                 StatsOverviewWidget::class,
+                AssetConditionChartWidget::class,
+                MonthlySupplyUsageChartWidget::class,
                 AccountWidget::class,
                 FilamentInfoWidget::class,
             ])

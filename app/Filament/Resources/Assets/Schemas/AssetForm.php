@@ -50,6 +50,20 @@ class AssetForm
                     ->numeric()
                     ->default(null)
                     ->prefix('Rp'),
+                TextInput::make('useful_life_years')
+                    ->label('Masa Manfaat (Tahun)')
+                    ->numeric()
+                    ->integer()
+                    ->minValue(1)
+                    ->default(4)
+                    ->required(),
+                TextInput::make('salvage_value')
+                    ->label('Nilai Residu / Sisa (Rp)')
+                    ->numeric()
+                    ->integer()
+                    ->minValue(0)
+                    ->default(0)
+                    ->prefix('Rp'),
                 Textarea::make('notes')
                     ->default(null)
                     ->columnSpanFull(),

@@ -6,6 +6,7 @@ use App\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Asset extends Model
 {
@@ -22,13 +23,45 @@ class Asset extends Model
         'brand',
         'purchase_date',
         'price',
+        'useful_life_years',
+        'salvage_value',
         'notes',
     ];
 
     protected $casts = [
         'purchase_date' => 'date',
         'price' => 'decimal:2',
+        'useful_life_years' => 'integer',
+        'salvage_value' => 'integer',
     ];
+
+    public function getAnnualDepreciationAttribute(): float
+    {
+        $price = (float) ($this->price ?? 0);
+        $salvageValue = min((float) ($this->salvage_value ?? 0), $price);
+        $usefulLifeYears = (int) ($this->useful_life_years ?? 0);
+
+        if ($usefulLifeYears <= 0) {
+            return 0.0;
+        }
+
+        return round(max(0, $price - $salvageValue) / $usefulLifeYears, 2);
+    }
+
+    public function getCurrentBookValueAttribute(): float
+    {
+        $price = (float) ($this->price ?? 0);
+
+        if ($price <= 0 || ! $this->purchase_date) {
+            return $price;
+        }
+
+        $salvageValue = min((float) ($this->salvage_value ?? 0), $price);
+        $elapsedDays = max(0, $this->purchase_date->diffInDays(today(), false));
+        $depreciation = $this->annual_depreciation * ($elapsedDays / 365.25);
+
+        return round(max($salvageValue, $price - $depreciation), 2);
+    }
 
     /**
      * Get the category that owns the asset.
@@ -46,6 +79,11 @@ class Asset extends Model
         return $this->belongsTo(Room::class);
     }
 
+    public function loans(): HasMany
+    {
+        return $this->hasMany(AssetLoan::class);
+    }
+
     /**
      * Label representation for activity audit logs.
      */
@@ -54,4 +92,3 @@ class Asset extends Model
         return "{$this->asset_code} - {$this->name}";
     }
 }
-

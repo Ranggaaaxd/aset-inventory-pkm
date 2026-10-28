@@ -54,6 +54,9 @@ class AssetsTable
                 TextColumn::make('price')
                     ->money('IDR', locale: 'id')
                     ->sortable(),
+                TextColumn::make('current_book_value')
+                    ->label('Nilai Buku Saat Ini')
+                    ->money('IDR', locale: 'id'),
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
