@@ -32,7 +32,11 @@ class Asset extends Model
         'pic_contact',
         'condition',
         'brand',
+        'image',
+        'tax_group',
         'purchase_date',
+        'warranty_expiry_date',
+        'next_maintenance_date',
         'price',
         'useful_life_years',
         'salvage_value',
@@ -46,11 +50,36 @@ class Asset extends Model
 
     protected $casts = [
         'purchase_date' => 'date',
+        'warranty_expiry_date' => 'date',
+        'next_maintenance_date' => 'date',
         'quantity' => 'integer',
         'price' => 'decimal:2',
         'useful_life_years' => 'integer',
         'salvage_value' => 'integer',
     ];
+
+    protected static function booted(): void
+    {
+        static::creating(function (Asset $asset): void {
+            if (blank(trim((string) $asset->asset_code))) {
+                $asset->asset_code = static::generateNextAssetCode();
+            }
+        });
+    }
+
+    public static function generateNextAssetCode(): string
+    {
+        $prefix = 'PKM-AST-'.now()->format('Y').'-';
+        $nextNumber = static::query()
+            ->where('asset_code', 'like', $prefix.'%')
+            ->pluck('asset_code')
+            ->map(fn (string $code): int => preg_match('/^'.preg_quote($prefix, '/').'(\d+)$/', $code, $matches)
+                ? (int) $matches[1]
+                : 0)
+            ->max() + 1;
+
+        return $prefix.str_pad((string) $nextNumber, 4, '0', STR_PAD_LEFT);
+    }
 
     public function scopeLoanable(Builder $query): Builder
     {

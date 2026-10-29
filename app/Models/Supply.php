@@ -27,6 +27,29 @@ class Supply extends Model
         'min_stock' => 'integer',
     ];
 
+    protected static function booted(): void
+    {
+        static::creating(function (Supply $supply): void {
+            if (blank(trim((string) $supply->item_code))) {
+                $supply->item_code = static::generateNextItemCode();
+            }
+        });
+    }
+
+    public static function generateNextItemCode(): string
+    {
+        $prefix = 'PKM-ATK-';
+        $nextNumber = static::query()
+            ->where('item_code', 'like', $prefix.'%')
+            ->pluck('item_code')
+            ->map(fn (string $code): int => preg_match('/^'.preg_quote($prefix, '/').'(\d+)$/', $code, $matches)
+                ? (int) $matches[1]
+                : 0)
+            ->max() + 1;
+
+        return $prefix.str_pad((string) $nextNumber, 4, '0', STR_PAD_LEFT);
+    }
+
     /**
      * Get the category that owns the supply.
      */
@@ -59,4 +82,3 @@ class Supply extends Model
         return $this->item_code ? "{$this->item_code} - {$this->name}" : $this->name;
     }
 }
-

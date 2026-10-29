@@ -17,6 +17,7 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Carbon;
 
 class AssetsTable
 {
@@ -60,6 +61,24 @@ class AssetsTable
                         'Rusak/Afkir' => 'danger',
                         default => 'gray',
                     }),
+                TextColumn::make('next_maintenance_date')
+                    ->label('Jadwal Servis')
+                    ->badge()
+                    ->formatStateUsing(fn (?Carbon $state): string => ! $state
+                        ? '-'
+                        : ($state->lte(today()) ? 'Waktunya Servis' : $state->format('d/m/Y')))
+                    ->color(fn (?Carbon $state): string => $state && $state->lte(today()) ? 'danger' : 'gray')
+                    ->sortable(),
+                TextColumn::make('warranty_expiry_date')
+                    ->label('Garansi Berakhir')
+                    ->badge()
+                    ->formatStateUsing(fn (?Carbon $state): string => ! $state
+                        ? '-'
+                        : ($state->lte(today()) ? 'Garansi Habis' : $state->format('d/m/Y')))
+                    ->color(fn (?Carbon $state): string => ! $state
+                        ? 'gray'
+                        : ($state->lte(today()) ? 'danger' : 'success'))
+                    ->sortable(),
                 TextColumn::make('brand')
                     ->searchable(),
                 TextColumn::make('purchase_date')
@@ -143,6 +162,12 @@ class AssetsTable
                     ]))
                     ->modalSubmitAction(false)
                     ->modalCancelActionLabel('Tutup'),
+                Action::make('print_bast')
+                    ->label('Cetak BAST')
+                    ->icon(Heroicon::OutlinedDocumentText)
+                    ->color('primary')
+                    ->url(fn (Asset $record): string => route('assets.bast', ['asset' => $record]))
+                    ->openUrlInNewTab(),
                 EditAction::make(),
             ])
             ->toolbarActions([

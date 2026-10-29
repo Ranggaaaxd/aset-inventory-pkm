@@ -4,9 +4,12 @@ namespace App\Filament\Resources\Assets\Schemas;
 
 use App\Models\Asset;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 
 class AssetForm
@@ -16,6 +19,8 @@ class AssetForm
         return $schema
             ->components([
                 TextInput::make('asset_code')
+                    ->default(fn (): string => Asset::generateNextAssetCode())
+                    ->disabled()
                     ->required(),
                 TextInput::make('name')
                     ->required(),
@@ -51,18 +56,46 @@ class AssetForm
                     ->required(),
                 TextInput::make('brand')
                     ->default(null),
+                FileUpload::make('image')
+                    ->label('Foto Aset')
+                    ->image()
+                    ->disk('public')
+                    ->directory('assets')
+                    ->visibility('public')
+                    ->maxSize(5120),
                 DatePicker::make('purchase_date'),
+                DatePicker::make('warranty_expiry_date')
+                    ->label('Tanggal Habis Garansi'),
+                DatePicker::make('next_maintenance_date')
+                    ->label('Jadwal Servis Berikutnya'),
                 TextInput::make('price')
                     ->numeric()
                     ->default(null)
                     ->prefix('Rp'),
+                Select::make('tax_group')
+                    ->label('Golongan Fiskal Pajak')
+                    ->options([
+                        'Golongan 1' => 'Golongan 1 (4 Tahun - Komputer/IT)',
+                        'Golongan 2' => 'Golongan 2 (8 Tahun - Mebel/AC/Kendaraan)',
+                        'Non-Depresiasi' => 'Non-Depresiasi',
+                    ])
+                    ->live()
+                    ->afterStateUpdated(function (?string $state, Set $set): void {
+                        $set('useful_life_years', match ($state) {
+                            'Golongan 1' => 4,
+                            'Golongan 2' => 8,
+                            'Non-Depresiasi' => 0,
+                            default => null,
+                        });
+                    })
+                    ->default(null),
                 TextInput::make('useful_life_years')
                     ->label('Masa Manfaat (Tahun)')
                     ->numeric()
                     ->integer()
-                    ->minValue(1)
+                    ->minValue(fn (Get $get): int => $get('tax_group') === 'Non-Depresiasi' ? 0 : 1)
                     ->default(4)
-                    ->required(),
+                    ->required(fn (Get $get): bool => $get('tax_group') !== 'Non-Depresiasi'),
                 TextInput::make('salvage_value')
                     ->label('Nilai Residu / Sisa (Rp)')
                     ->numeric()

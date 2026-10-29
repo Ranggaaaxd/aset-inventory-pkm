@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Supplies\Schemas;
 
+use App\Models\Supply;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
@@ -14,7 +15,9 @@ class SupplyForm
         return $schema
             ->components([
                 TextInput::make('item_code')
-                    ->default(null),
+                    ->default(fn (): string => Supply::generateNextItemCode())
+                    ->disabled()
+                    ->required(),
                 TextInput::make('name')
                     ->required(),
                 Select::make('category_id')

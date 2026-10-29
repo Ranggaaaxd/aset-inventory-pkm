@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Pages\Auth\CustomLogin;
 use App\Filament\Widgets\AssetConditionChartWidget;
 use App\Filament\Widgets\MonthlySupplyUsageChartWidget;
 use App\Filament\Widgets\StatsOverviewWidget;
@@ -31,14 +32,15 @@ class AdminPanelProvider extends PanelProvider
             ->default()
             ->id('admin')
             ->path('admin')
-            ->login()
+            ->login(CustomLogin::class)
             ->spa()
             ->sidebarCollapsibleOnDesktop()
             ->maxContentWidth(Width::Full)
             ->unsavedChangesAlerts()
             ->brandName('PT Pakuan Karya Mandiri')
-            ->brandLogo(fn () => view('filament.components.brand'))
-            ->brandLogoHeight('2.6rem')
+            ->brandLogo(asset('images/logo-pkm.png'))
+            ->brandLogoHeight('3.2rem')
+            ->favicon(asset('images/logo-pkm.png'))
             ->renderHook(
                 PanelsRenderHook::STYLES_AFTER,
                 fn (): HtmlString => new HtmlString(<<<'HTML'
@@ -59,7 +61,8 @@ class AdminPanelProvider extends PanelProvider
                     HTML),
             )
             ->colors([
-                'primary' => Color::hex('#0f3b6c'),
+                'primary' => Color::hex('#7B3598'),
+                'success' => Color::hex('#108A44'),
                 'gray' => Color::Slate,
             ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
