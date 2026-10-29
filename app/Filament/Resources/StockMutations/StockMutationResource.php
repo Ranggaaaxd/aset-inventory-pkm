@@ -18,7 +18,13 @@ class StockMutationResource extends Resource
 {
     protected static ?string $model = StockMutation::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedArrowsRightLeft;
+
+    protected static ?string $navigationLabel = 'Mutasi Keluar-Masuk';
+
+    protected static string|\UnitEnum|null $navigationGroup = 'Logistik & ATK';
+
+    protected static ?int $navigationSort = 2;
 
     public static function form(Schema $schema): Schema
     {

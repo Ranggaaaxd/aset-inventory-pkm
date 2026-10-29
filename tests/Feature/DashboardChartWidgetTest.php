@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Filament\Widgets\AssetConditionChartWidget;
 use App\Filament\Widgets\MonthlySupplyUsageChartWidget;
+use App\Filament\Widgets\StatsOverviewWidget;
 use App\Models\Asset;
 use App\Models\StockMutation;
 use App\Models\Supply;
@@ -15,6 +16,13 @@ use Tests\TestCase;
 class DashboardChartWidgetTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_dashboard_widgets_are_ordered_by_priority(): void
+    {
+        $this->assertSame(1, StatsOverviewWidget::getSort());
+        $this->assertSame(2, AssetConditionChartWidget::getSort());
+        $this->assertSame(3, MonthlySupplyUsageChartWidget::getSort());
+    }
 
     protected function tearDown(): void
     {

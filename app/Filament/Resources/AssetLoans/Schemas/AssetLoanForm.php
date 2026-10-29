@@ -21,7 +21,7 @@ class AssetLoanForm
                     ->relationship(
                         'asset',
                         'name',
-                        modifyQueryUsing: fn (Builder $query) => $query->where('condition', 'Baik'),
+                        modifyQueryUsing: fn (Builder $query) => $query->loanable(),
                     )
                     ->getOptionLabelFromRecordUsing(fn (Asset $record): string => "{$record->asset_code} - {$record->name}")
                     ->searchable(['asset_code', 'name'])

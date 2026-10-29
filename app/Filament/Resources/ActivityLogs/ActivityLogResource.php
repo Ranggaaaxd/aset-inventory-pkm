@@ -15,7 +15,9 @@ class ActivityLogResource extends Resource
 {
     protected static ?string $model = ActivityLog::class;
 
-    protected static ?string $navigationLabel = 'Audit Log Perubahan';
+    protected static ?string $navigationLabel = 'Riwayat Perubahan';
+
+    protected static string|\UnitEnum|null $navigationGroup = 'Master Data';
 
     protected static ?string $modelLabel = 'Audit Log';
 
@@ -23,7 +25,7 @@ class ActivityLogResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClock;
 
-    protected static ?int $navigationSort = 20;
+    protected static ?int $navigationSort = 3;
 
     public static function canCreate(): bool
     {

@@ -73,10 +73,15 @@ class StockMutationsTable
                         ->color('info')
                         ->action(fn ($livewire) => ExportService::exportStockMutations($livewire->getFilteredTableQuery(), 'csv')),
                 ])
-                ->label('Ekspor Mutasi Stok')
+                ->label('Ekspor Rekap ATK')
                 ->icon(Heroicon::OutlinedArrowDownTray)
                 ->color('primary')
                 ->button(),
+                Action::make('print_official_report')
+                    ->label('Cetak Laporan Resmi')
+                    ->icon(Heroicon::OutlinedPrinter)
+                    ->color('gray')
+                    ->url(route('reports.stock-mutations'), shouldOpenInNewTab: true),
             ])
             ->recordActions([
                 EditAction::make(),

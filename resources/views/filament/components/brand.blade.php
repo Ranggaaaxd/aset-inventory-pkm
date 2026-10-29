@@ -9,7 +9,7 @@
     <!-- Teks Brand -->
     <div style="display: flex; flex-direction: column; text-align: left; line-height: 1.15;">
         <span style="font-size: 14px; font-weight: 800; letter-spacing: -0.2px; color: inherit; white-space: nowrap;">
-            Pakuan Karya Mandiri
+            PT Pakuan Karya Mandiri
         </span>
         <span style="font-size: 9px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: #38bdf8; white-space: nowrap;">
             Aset &amp; Inventory

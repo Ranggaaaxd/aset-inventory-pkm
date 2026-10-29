@@ -2,10 +2,11 @@
 
 namespace App\Filament\Resources\Assets\Schemas;
 
+use App\Models\Asset;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
 
 class AssetForm
@@ -17,6 +18,11 @@ class AssetForm
                 TextInput::make('asset_code')
                     ->required(),
                 TextInput::make('name')
+                    ->required(),
+                Select::make('status')
+                    ->options(Asset::STATUSES)
+                    ->disableOptionWhen(fn (string $value): bool => $value === 'Dipinjam')
+                    ->default('Tersedia di Gudang')
                     ->required(),
                 Select::make('category_id')
                     ->relationship('category', 'name')
@@ -30,8 +36,8 @@ class AssetForm
                     ->default(null),
                 TextInput::make('pic_name')
                     ->label('Nama PIC / Pemegang Barang')
-                    ->placeholder('Contoh: Budi Santoso (kosongkan jika barang bersama)')
-                    ->helperText('Opsional jika barang bersama / fasilitas umum seperti AC, proyektor, atau meja meeting.')
+                    ->placeholder('Contoh: Budi Santoso')
+                    ->helperText('Kosongkan jika barang masih berupa stok cadangan di gudang')
                     ->maxLength(255),
                 TextInput::make('pic_contact')
                     ->label('Kontak PIC (No. WhatsApp)')

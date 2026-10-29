@@ -18,9 +18,13 @@ class AssetLoanResource extends Resource
 {
     protected static ?string $model = AssetLoan::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedArrowUturnRight;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedArrowPathRoundedSquare;
 
     protected static ?string $navigationLabel = 'Peminjaman Aset';
+
+    protected static string|\UnitEnum|null $navigationGroup = 'Manajemen Aset';
+
+    protected static ?int $navigationSort = 2;
 
     protected static ?string $modelLabel = 'Peminjaman Aset';
 
@@ -34,6 +38,16 @@ class AssetLoanResource extends Resource
     public static function table(Table $table): Table
     {
         return AssetLoansTable::configure($table);
+    }
+
+    public static function getNavigationBadge(): ?string
+    {
+        return (string) AssetLoan::query()->where('status', 'dipinjam')->count();
+    }
+
+    public static function getNavigationBadgeColor(): string|array|null
+    {
+        return 'warning';
     }
 
     public static function getPages(): array

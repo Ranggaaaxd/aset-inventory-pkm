@@ -46,13 +46,24 @@ class AssetsTable
                         'Rusak Berat' => 'danger',
                         default => 'gray',
                     }),
+                TextColumn::make('price')
+                    ->label('Harga Perolehan')
+                    ->money('IDR', locale: 'id')
+                    ->sortable(),
+                TextColumn::make('status')
+                    ->label('Status Penempatan')
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'Tersedia di Gudang' => 'info',
+                        'Digunakan' => 'success',
+                        'Dipinjam' => 'warning',
+                        'Rusak/Afkir' => 'danger',
+                        default => 'gray',
+                    }),
                 TextColumn::make('brand')
                     ->searchable(),
                 TextColumn::make('purchase_date')
                     ->date()
-                    ->sortable(),
-                TextColumn::make('price')
-                    ->money('IDR', locale: 'id')
                     ->sortable(),
                 TextColumn::make('current_book_value')
                     ->label('Nilai Buku Saat Ini')
@@ -78,6 +89,9 @@ class AssetsTable
                         'Rusak Ringan' => 'Rusak Ringan',
                         'Rusak Berat' => 'Rusak Berat',
                     ]),
+                SelectFilter::make('status')
+                    ->label('Status Penempatan')
+                    ->options(Asset::STATUSES),
                 SelectFilter::make('ownership')
                     ->label('Status Kepemilikan (PIC)')
                     ->options([
@@ -100,24 +114,29 @@ class AssetsTable
                         ->label('Ekspor ke Excel (.xlsx)')
                         ->icon(Heroicon::OutlinedArrowDownTray)
                         ->color('success')
-                        ->action(fn ($livewire) => ExportService::exportAssets($livewire->getFilteredTableQuery(), 'xlsx')),
+                        ->action(fn () => ExportService::exportAssets(null, 'xlsx')),
                     Action::make('export_csv')
                         ->label('Ekspor ke CSV (.csv)')
                         ->icon(Heroicon::OutlinedDocumentText)
                         ->color('info')
-                        ->action(fn ($livewire) => ExportService::exportAssets($livewire->getFilteredTableQuery(), 'csv')),
+                        ->action(fn () => ExportService::exportAssets(null, 'csv')),
                 ])
-                ->label('Ekspor Data Aset')
-                ->icon(Heroicon::OutlinedArrowDownTray)
-                ->color('primary')
-                ->button(),
+                    ->label('Ekspor Excel/CSV')
+                    ->icon(Heroicon::OutlinedArrowDownTray)
+                    ->color('primary')
+                    ->button(),
+                Action::make('print_official_report')
+                    ->label('Cetak Laporan Resmi')
+                    ->icon(Heroicon::OutlinedPrinter)
+                    ->color('gray')
+                    ->url(route('reports.assets'), shouldOpenInNewTab: true),
             ])
             ->recordActions([
                 Action::make('print_label')
                     ->label('Cetak Label')
                     ->icon(Heroicon::OutlinedPrinter)
                     ->color('info')
-                    ->modalHeading(fn (Asset $record): string => 'Cetak Stiker Label - ' . $record->asset_code)
+                    ->modalHeading(fn (Asset $record): string => 'Cetak Stiker Label - '.$record->asset_code)
                     ->modalWidth(Width::Medium)
                     ->modalContent(fn (Asset $record) => view('filament.resources.assets.print-label-modal', [
                         'record' => $record,
@@ -142,6 +161,7 @@ class AssetsTable
                         ->color('info')
                         ->action(function (Collection $records) {
                             $ids = $records->pluck('id')->join(',');
+
                             return redirect()->route('assets.print-batch', ['ids' => $ids]);
                         }),
                     DeleteBulkAction::make(),

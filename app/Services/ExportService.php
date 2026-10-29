@@ -31,6 +31,9 @@ class ExportService
             'No',
             'Kode Aset',
             'Nama Barang / Aset',
+            'Ukuran',
+            'Jumlah',
+            'Status Penempatan',
             'Kategori',
             'Ruangan',
             'PIC / Pemegang',
@@ -39,6 +42,7 @@ class ExportService
             'Merk / Brand',
             'Tgl Pembelian',
             'Nilai Perolehan (Rp)',
+            'Nilai Buku Saat Ini (Rp)',
             'Catatan',
             'Tgl Terdaftar',
         ];
@@ -50,6 +54,9 @@ class ExportService
                 $no++,
                 $asset->asset_code,
                 $asset->name,
+                $asset->size ?? '-',
+                (int) $asset->quantity,
+                $asset->status,
                 $asset->category?->name ?? '-',
                 $asset->room?->name ?? '-',
                 $asset->pic_name ?: 'Barang Bersama',
@@ -58,6 +65,7 @@ class ExportService
                 $asset->brand ?? '-',
                 $asset->purchase_date ? $asset->purchase_date->format('d/m/Y') : '-',
                 $asset->price !== null ? (float) $asset->price : 0,
+                (float) $asset->current_book_value,
                 $asset->notes ?? '-',
                 $asset->created_at ? $asset->created_at->format('d/m/Y H:i') : '-',
             ];
@@ -162,4 +170,3 @@ class ExportService
         ])->deleteFileAfterSend(true);
     }
 }
-

@@ -7,6 +7,8 @@ use Filament\Widgets\ChartWidget;
 
 class MonthlySupplyUsageChartWidget extends ChartWidget
 {
+    protected static ?int $sort = 3;
+
     protected ?string $heading = 'Tren Pemakaian Perlengkapan & ATK Bulanan';
 
     protected int|string|array $columnSpan = 1;

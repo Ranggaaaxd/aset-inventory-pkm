@@ -18,7 +18,13 @@ class AssetResource extends Resource
 {
     protected static ?string $model = Asset::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedComputerDesktop;
+
+    protected static ?string $navigationLabel = 'Daftar Aset Kantor';
+
+    protected static string|\UnitEnum|null $navigationGroup = 'Manajemen Aset';
+
+    protected static ?int $navigationSort = 1;
 
     protected static ?string $recordTitleAttribute = 'name';
 

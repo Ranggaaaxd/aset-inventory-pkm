@@ -7,6 +7,8 @@ use Filament\Widgets\ChartWidget;
 
 class AssetConditionChartWidget extends ChartWidget
 {
+    protected static ?int $sort = 2;
+
     protected ?string $heading = 'Proporsi Kondisi Aset Kantor';
 
     protected int|string|array $columnSpan = 1;

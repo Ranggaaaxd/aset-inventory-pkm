@@ -2,9 +2,9 @@
 
 namespace App\Providers\Filament;
 
-use App\Filament\Widgets\StatsOverviewWidget;
 use App\Filament\Widgets\AssetConditionChartWidget;
 use App\Filament\Widgets\MonthlySupplyUsageChartWidget;
+use App\Filament\Widgets\StatsOverviewWidget;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -13,9 +13,8 @@ use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
+use Filament\Support\Enums\Width;
 use Filament\View\PanelsRenderHook;
-use Filament\Widgets\AccountWidget;
-use Filament\Widgets\FilamentInfoWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
@@ -34,8 +33,10 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->login()
             ->spa()
+            ->sidebarCollapsibleOnDesktop()
+            ->maxContentWidth(Width::Full)
             ->unsavedChangesAlerts()
-            ->brandName('Pakuan Karya Mandiri')
+            ->brandName('PT Pakuan Karya Mandiri')
             ->brandLogo(fn () => view('filament.components.brand'))
             ->brandLogoHeight('2.6rem')
             ->renderHook(
@@ -71,8 +72,6 @@ class AdminPanelProvider extends PanelProvider
                 StatsOverviewWidget::class,
                 AssetConditionChartWidget::class,
                 MonthlySupplyUsageChartWidget::class,
-                AccountWidget::class,
-                FilamentInfoWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,

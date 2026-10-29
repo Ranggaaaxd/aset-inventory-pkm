@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Traits\LogsActivity;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -12,9 +13,19 @@ class Asset extends Model
 {
     use HasFactory, LogsActivity;
 
+    public const STATUSES = [
+        'Tersedia di Gudang' => 'Tersedia di Gudang',
+        'Digunakan' => 'Digunakan',
+        'Dipinjam' => 'Dipinjam',
+        'Rusak/Afkir' => 'Rusak/Afkir',
+    ];
+
     protected $fillable = [
         'asset_code',
         'name',
+        'size',
+        'quantity',
+        'status',
         'category_id',
         'room_id',
         'pic_name',
@@ -28,12 +39,34 @@ class Asset extends Model
         'notes',
     ];
 
+    protected $attributes = [
+        'quantity' => 1,
+        'status' => 'Tersedia di Gudang',
+    ];
+
     protected $casts = [
         'purchase_date' => 'date',
+        'quantity' => 'integer',
         'price' => 'decimal:2',
         'useful_life_years' => 'integer',
         'salvage_value' => 'integer',
     ];
+
+    public function scopeLoanable(Builder $query): Builder
+    {
+        return $query
+            ->where('condition', '!=', 'Rusak/Afkir')
+            ->where('status', '!=', 'Dipinjam')
+            ->where(function (Builder $query): void {
+                $query->whereNull('pic_name')
+                    ->orWhere('pic_name', '')
+                    ->orWhere('pic_name', 'Barang Bersama');
+            })
+            ->where(function (Builder $query): void {
+                $query->where('status', 'Tersedia di Gudang')
+                    ->orWhere('status', 'Digunakan');
+            });
+    }
 
     public function getAnnualDepreciationAttribute(): float
     {

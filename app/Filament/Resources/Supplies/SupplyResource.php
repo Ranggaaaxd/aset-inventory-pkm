@@ -18,7 +18,13 @@ class SupplyResource extends Resource
 {
     protected static ?string $model = Supply::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedArchiveBox;
+
+    protected static ?string $navigationLabel = 'Perlengkapan & ATK';
+
+    protected static string|\UnitEnum|null $navigationGroup = 'Logistik & ATK';
+
+    protected static ?int $navigationSort = 1;
 
     protected static ?string $recordTitleAttribute = 'name';
 
@@ -30,6 +36,22 @@ class SupplyResource extends Resource
     public static function table(Table $table): Table
     {
         return SuppliesTable::configure($table);
+    }
+
+    public static function getNavigationBadge(): ?string
+    {
+        $lowStockCount = Supply::query()
+            ->whereColumn('stock', '<=', 'min_stock')
+            ->count();
+
+        return $lowStockCount > 0 ? (string) $lowStockCount : null;
+    }
+
+    public static function getNavigationBadgeColor(): string|array|null
+    {
+        return Supply::query()->whereColumn('stock', '<=', 'min_stock')->exists()
+            ? 'danger'
+            : null;
     }
 
     public static function getRelations(): array
