@@ -1,8 +1,10 @@
 <?php
 
-use App\Http\Controllers\AssetLabelController;
 use App\Http\Controllers\AssetBastController;
+use App\Http\Controllers\AssetDisposalController;
+use App\Http\Controllers\AssetLabelController;
 use App\Http\Controllers\OfficialReportController;
+use App\Http\Controllers\RoomKirController;
 use App\Http\Middleware\RedirectGuestsToFilamentLogin;
 use Illuminate\Support\Facades\Route;
 
@@ -19,4 +21,11 @@ Route::middleware(['web'])->group(function () {
 
     Route::middleware(RedirectGuestsToFilamentLogin::class)->get('/assets/{asset}/bast', [AssetBastController::class, 'show'])
         ->name('assets.bast');
+
+    Route::middleware(RedirectGuestsToFilamentLogin::class)->group(function () {
+        Route::get('/assets/{asset}/disposal-bap', [AssetDisposalController::class, 'show'])
+            ->name('assets.disposal.bap');
+        Route::get('/rooms/{room}/kir', [RoomKirController::class, 'show'])
+            ->name('rooms.kir');
+    });
 });

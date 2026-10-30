@@ -2,10 +2,14 @@
 
 namespace App\Filament\Resources\Supplies\Tables;
 
+use App\Filament\Actions\ImportInventoryAction;
 use App\Models\Supply;
+use App\Services\CsvTemplateDownload;
+use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
@@ -42,6 +46,18 @@ class SuppliesTable
             ])
             ->filters([
                 //
+            ])
+            ->headerActions([
+                Action::make('downloadTemplate')
+                    ->label('Unduh Template Excel')
+                    ->icon(Heroicon::OutlinedDocumentArrowDown)
+                    ->color('gray')
+                    ->action(fn () => CsvTemplateDownload::download(
+                        'template_atk_pkm.csv',
+                        ['name', 'category_name', 'stock', 'min_stock', 'unit', 'notes'],
+                        ['Kertas A4', 'ATK', '20', '5', 'ream', 'Contoh catatan'],
+                    )),
+                ImportInventoryAction::supplies(),
             ])
             ->recordActions([
                 EditAction::make(),

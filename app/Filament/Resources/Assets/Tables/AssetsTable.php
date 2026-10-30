@@ -2,7 +2,9 @@
 
 namespace App\Filament\Resources\Assets\Tables;
 
+use App\Filament\Actions\ImportInventoryAction;
 use App\Models\Asset;
+use App\Services\CsvTemplateDownload;
 use App\Services\ExportService;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
@@ -11,7 +13,12 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Infolists\Components\ImageEntry;
+use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Group;
 use Filament\Schemas\Components\Section;
@@ -23,6 +30,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 class AssetsTable
 {
@@ -69,10 +77,18 @@ class AssetsTable
                 TextColumn::make('next_maintenance_date')
                     ->label('Jadwal Servis')
                     ->badge()
-                    ->formatStateUsing(fn (?Carbon $state): string => ! $state
-                        ? '-'
-                        : ($state->lte(today()) ? 'Waktunya Servis' : $state->format('d/m/Y')))
-                    ->color(fn (?Carbon $state): string => $state && $state->lte(today()) ? 'danger' : 'gray')
+                    ->formatStateUsing(fn (?Carbon $state): string => match (true) {
+                        ! $state => '-',
+                        $state->lt(today()) => 'Lewat Jadwal',
+                        $state->lte(today()->addDays(7)) => 'Jatuh Tempo',
+                        default => $state->format('d/m/Y'),
+                    })
+                    ->color(fn (?Carbon $state): string => match (true) {
+                        ! $state => 'gray',
+                        $state->lt(today()) => 'danger',
+                        $state->lte(today()->addDays(7)) => 'warning',
+                        default => 'success',
+                    })
                     ->sortable(),
                 TextColumn::make('warranty_expiry_date')
                     ->label('Garansi Berakhir')
@@ -154,8 +170,131 @@ class AssetsTable
                     ->icon(Heroicon::OutlinedPrinter)
                     ->color('gray')
                     ->url(route('reports.assets'), shouldOpenInNewTab: true),
+                Action::make('downloadTemplate')
+                    ->label('Unduh Template Excel')
+                    ->icon(Heroicon::OutlinedDocumentArrowDown)
+                    ->color('gray')
+                    ->action(fn () => CsvTemplateDownload::download(
+                        'template_aset_pkm.csv',
+                        ['name', 'category_name', 'room_name', 'brand', 'condition', 'price', 'status', 'pic_name'],
+                        ['Proyektor Epson', 'Elektronik', 'Ruang Rapat', 'Epson', 'Baik', '5000000', 'Digunakan', 'Siti Rahma'],
+                    )),
+                ImportInventoryAction::assets(),
             ])
             ->recordActions([
+                Action::make('disposeAsset')
+                    ->label('Pelepasan Aset')
+                    ->icon(Heroicon::OutlinedArchiveBoxXMark)
+                    ->color('danger')
+                    ->schema([
+                        DatePicker::make('disposal_date')
+                            ->label('Tanggal Pelepasan')
+                            ->default(today())
+                            ->required(),
+                        Select::make('disposal_method')
+                            ->label('Metode Pelepasan')
+                            ->options([
+                                'Dimusnahkan' => 'Dimusnahkan',
+                                'Dijual / Dilelang' => 'Dijual / Dilelang',
+                                'Dihibahkan' => 'Dihibahkan',
+                            ])
+                            ->required()
+                            ->live(),
+                        TextInput::make('disposal_amount')
+                            ->label('Nilai Penjualan')
+                            ->numeric()
+                            ->minValue(0)
+                            ->default(0)
+                            ->prefix('Rp')
+                            ->required()
+                            ->visible(fn ($get): bool => $get('disposal_method') === 'Dijual / Dilelang'),
+                        Textarea::make('reason')
+                            ->label('Alasan Teknis Penghapusan')
+                            ->required()
+                            ->columnSpanFull(),
+                        TextInput::make('approved_by')
+                            ->label('Nama Pejabat Penyetuju')
+                            ->placeholder('Contoh: Direktur')
+                            ->required()
+                            ->maxLength(255),
+                    ])
+                    ->modalHeading('Pelepasan Aset')
+                    ->modalSubmitActionLabel('Simpan Pelepasan')
+                    ->requiresConfirmation()
+                    ->visible(fn (Asset $record): bool => ! $record->disposal()->exists())
+                    ->action(function (Asset $record, array $data): void {
+                        DB::transaction(function () use ($record, $data): void {
+                            $record->disposal()->create([
+                                ...$data,
+                                'disposal_amount' => $data['disposal_method'] === 'Dijual / Dilelang'
+                                    ? $data['disposal_amount']
+                                    : 0,
+                            ]);
+                            $record->update(['status' => 'Rusak/Afkir']);
+                        });
+                    }),
+                Action::make('printBap')
+                    ->label('Cetak BAP')
+                    ->icon(Heroicon::OutlinedDocumentText)
+                    ->color('gray')
+                    ->url(fn (Asset $record): string => route('assets.disposal.bap', ['asset' => $record]))
+                    ->openUrlInNewTab()
+                    ->visible(fn (Asset $record): bool => $record->disposal()->exists()),
+                Action::make('recordMaintenance')
+                    ->label('Update Servis')
+                    ->icon(Heroicon::OutlinedCheckBadge)
+                    ->color('success')
+                    ->schema([
+                        DatePicker::make('maintenance_date')
+                            ->label('Tanggal Servis')
+                            ->default(today())
+                            ->required(),
+                        TextInput::make('vendor_name')
+                            ->label('Bengkel / Teknisi')
+                            ->required()
+                            ->maxLength(255),
+                        TextInput::make('cost')
+                            ->label('Biaya Servis')
+                            ->numeric()
+                            ->minValue(0)
+                            ->default(0)
+                            ->prefix('Rp')
+                            ->required(),
+                        Textarea::make('description')
+                            ->label('Detail Perbaikan / Penggantian')
+                            ->required()
+                            ->columnSpanFull(),
+                        DatePicker::make('next_maintenance_date')
+                            ->label('Tanggal Servis Berikutnya')
+                            ->default(now()->addDays(90))
+                            ->required(),
+                        Select::make('condition')
+                            ->label('Kondisi Setelah Servis')
+                            ->options([
+                                'Baik' => 'Baik',
+                                'Rusak Ringan' => 'Rusak Ringan',
+                                'Rusak Berat' => 'Rusak Berat',
+                            ])
+                            ->default('Baik')
+                            ->required(),
+                    ])
+                    ->modalHeading('Catat Servis Aset')
+                    ->modalSubmitActionLabel('Simpan Update')
+                    ->action(function (Asset $record, array $data): void {
+                        DB::transaction(function () use ($record, $data): void {
+                            $record->maintenances()->create([
+                                'maintenance_date' => $data['maintenance_date'],
+                                'vendor_name' => $data['vendor_name'],
+                                'cost' => $data['cost'],
+                                'description' => $data['description'],
+                            ]);
+
+                            $record->update([
+                                'condition' => $data['condition'],
+                                'next_maintenance_date' => $data['next_maintenance_date'],
+                            ]);
+                        });
+                    }),
                 ViewAction::make('quickView')
                     ->label('Lihat Detail')
                     ->icon(Heroicon::OutlinedEye)
@@ -245,6 +384,33 @@ class AssetsTable
                                 TextEntry::make('notes')
                                     ->label('Catatan')
                                     ->placeholder('-')
+                                    ->columnSpanFull(),
+                            ]),
+                        Section::make('Riwayat Servis')
+                            ->columns(2)
+                            ->columnSpanFull()
+                            ->schema([
+                                TextEntry::make('maintenance_total_cost')
+                                    ->label('Total Biaya Servis')
+                                    ->state(fn (Asset $record): int => (int) $record->maintenances()->sum('cost'))
+                                    ->money('IDR', locale: 'id')
+                                    ->columnSpanFull(),
+                                RepeatableEntry::make('maintenances')
+                                    ->label('Catatan Servis')
+                                    ->columns(2)
+                                    ->schema([
+                                        TextEntry::make('maintenance_date')
+                                            ->label('Tanggal')
+                                            ->date('d/m/Y'),
+                                        TextEntry::make('vendor_name')
+                                            ->label('Bengkel / Teknisi'),
+                                        TextEntry::make('cost')
+                                            ->label('Biaya')
+                                            ->money('IDR', locale: 'id'),
+                                        TextEntry::make('description')
+                                            ->label('Detail Perbaikan')
+                                            ->columnSpanFull(),
+                                    ])
                                     ->columnSpanFull(),
                             ]),
                     ])

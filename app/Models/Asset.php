@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Asset extends Model
 {
@@ -144,6 +145,16 @@ class Asset extends Model
     public function loans(): HasMany
     {
         return $this->hasMany(AssetLoan::class);
+    }
+
+    public function maintenances(): HasMany
+    {
+        return $this->hasMany(AssetMaintenance::class);
+    }
+
+    public function disposal(): HasOne
+    {
+        return $this->hasOne(AssetDisposal::class);
     }
 
     /**

@@ -2,9 +2,12 @@
 
 namespace App\Filament\Resources\Rooms\Tables;
 
+use App\Models\Room;
+use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
@@ -33,6 +36,12 @@ class RoomsTable
                 //
             ])
             ->recordActions([
+                Action::make('printKir')
+                    ->label('Cetak KIR')
+                    ->icon(Heroicon::OutlinedPrinter)
+                    ->color('success')
+                    ->url(fn (Room $record): string => route('rooms.kir', ['room' => $record]))
+                    ->openUrlInNewTab(),
                 EditAction::make(),
             ])
             ->toolbarActions([
