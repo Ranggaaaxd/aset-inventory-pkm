@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 
 class Category extends Model
 {
@@ -16,6 +17,15 @@ class Category extends Model
         'type',
         'description',
     ];
+
+    protected static function booted(): void
+    {
+        static::saving(function (Category $category): void {
+            if (blank($category->slug)) {
+                $category->slug = Str::slug($category->name);
+            }
+        });
+    }
 
     /**
      * Get the assets for the category.
@@ -33,4 +43,3 @@ class Category extends Model
         return $this->hasMany(Supply::class);
     }
 }
-

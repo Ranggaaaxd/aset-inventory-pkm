@@ -16,4 +16,9 @@ class EditAsset extends EditRecord
             DeleteAction::make(),
         ];
     }
+
+    protected function getFormActions(): array
+    {
+        return [];
+    }
 }

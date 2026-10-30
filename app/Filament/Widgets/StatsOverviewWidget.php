@@ -3,6 +3,7 @@
 namespace App\Filament\Widgets;
 
 use App\Models\Asset;
+use App\Models\AssetLoan;
 use App\Models\Supply;
 use Filament\Support\Icons\Heroicon;
 use Filament\Widgets\StatsOverviewWidget as BaseStatsOverviewWidget;
@@ -12,7 +13,9 @@ class StatsOverviewWidget extends BaseStatsOverviewWidget
 {
     protected static ?int $sort = 1;
 
-    protected int|array|null $columns = 4;
+    protected int|array|null $columns = 5;
+
+    protected int|string|array $columnSpan = 'full';
 
     protected function getStats(): array
     {
@@ -20,6 +23,7 @@ class StatsOverviewWidget extends BaseStatsOverviewWidget
         $totalAssetValue = Asset::sum('price') ?? 0;
         $totalSupplyTypes = Supply::count();
         $lowStockCount = Supply::whereColumn('stock', '<=', 'min_stock')->count();
+        $activeLoans = AssetLoan::query()->where('status', 'dipinjam')->count();
 
         return [
             Stat::make('Total Aset Kantor', number_format($totalAssets, 0, ',', '.').' Unit')
@@ -46,6 +50,12 @@ class StatsOverviewWidget extends BaseStatsOverviewWidget
                 ->icon(Heroicon::OutlinedExclamationTriangle)
                 ->color('danger')
                 ->descriptionColor('danger'),
+
+            Stat::make('Aset Sedang Dipinjam', number_format($activeLoans, 0, ',', '.').' Unit')
+                ->description('Jumlah aset yang sedang dipinjam')
+                ->descriptionIcon(Heroicon::OutlinedArrowPath)
+                ->icon(Heroicon::OutlinedArrowPath)
+                ->color('warning'),
         ];
     }
 }

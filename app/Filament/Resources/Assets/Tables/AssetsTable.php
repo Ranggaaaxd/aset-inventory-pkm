@@ -10,14 +10,19 @@ use Filament\Actions\BulkAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
+use Filament\Infolists\Components\ImageEntry;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Schemas\Components\Group;
+use Filament\Schemas\Components\Section;
 use Filament\Support\Enums\Width;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 
 class AssetsTable
 {
@@ -151,6 +156,111 @@ class AssetsTable
                     ->url(route('reports.assets'), shouldOpenInNewTab: true),
             ])
             ->recordActions([
+                ViewAction::make('quickView')
+                    ->label('Lihat Detail')
+                    ->icon(Heroicon::OutlinedEye)
+                    ->modalWidth(Width::TwoExtraLarge)
+                    ->infolist([
+                        Section::make('Informasi Aset')
+                            ->columns(3)
+                            ->columnSpanFull()
+                            ->schema([
+                                ImageEntry::make('image')
+                                    ->label('Foto Aset')
+                                    ->disk('public')
+                                    ->imageHeight(160)
+                                    ->columnSpan(1),
+                                Group::make([
+                                    TextEntry::make('name')
+                                        ->label('Nama Barang')
+                                        ->size('lg')
+                                        ->weight('bold'),
+                                    TextEntry::make('asset_code')
+                                        ->label('Kode Aset')
+                                        ->badge()
+                                        ->color('gray'),
+                                ])
+                                    ->columnSpan(2),
+                            ]),
+                        Section::make('Penempatan')
+                            ->columns(2)
+                            ->columnSpanFull()
+                            ->schema([
+                                TextEntry::make('room.name')
+                                    ->label('Ruangan')
+                                    ->placeholder('-'),
+                                TextEntry::make('status')
+                                    ->label('Status')
+                                    ->badge()
+                                    ->color(fn (string $state): string => match ($state) {
+                                        'Tersedia di Gudang' => 'info',
+                                        'Digunakan' => 'success',
+                                        'Dipinjam' => 'warning',
+                                        'Rusak/Afkir' => 'danger',
+                                        default => 'gray',
+                                    }),
+                                TextEntry::make('pic_name')
+                                    ->label('Nama PIC')
+                                    ->placeholder('Barang Bersama'),
+                                TextEntry::make('pic_contact')
+                                    ->label('Kontak WhatsApp')
+                                    ->placeholder('-'),
+                            ]),
+                        Section::make('Akuntansi')
+                            ->columns(3)
+                            ->columnSpanFull()
+                            ->schema([
+                                TextEntry::make('price')
+                                    ->label('Harga Perolehan')
+                                    ->money('IDR', locale: 'id')
+                                    ->placeholder('-'),
+                                TextEntry::make('current_book_value')
+                                    ->label('Nilai Buku Saat Ini')
+                                    ->money('IDR', locale: 'id'),
+                                TextEntry::make('tax_group')
+                                    ->label('Golongan Pajak')
+                                    ->placeholder('-'),
+                            ]),
+                        Section::make('Pemeliharaan')
+                            ->columns(2)
+                            ->columnSpanFull()
+                            ->schema([
+                                TextEntry::make('condition')
+                                    ->label('Kondisi')
+                                    ->badge()
+                                    ->color(fn (string $state): string => match ($state) {
+                                        'Baik' => 'success',
+                                        'Rusak Ringan' => 'warning',
+                                        'Rusak Berat' => 'danger',
+                                        default => 'gray',
+                                    }),
+                                TextEntry::make('warranty_expiry_date')
+                                    ->label('Tanggal Habis Garansi')
+                                    ->date('d/m/Y')
+                                    ->placeholder('-'),
+                                TextEntry::make('next_maintenance_date')
+                                    ->label('Jadwal Servis Berikutnya')
+                                    ->date('d/m/Y')
+                                    ->placeholder('-'),
+                                TextEntry::make('notes')
+                                    ->label('Catatan')
+                                    ->placeholder('-')
+                                    ->columnSpanFull(),
+                            ]),
+                    ])
+                    ->extraModalFooterActions([
+                        Action::make('printLabel')
+                            ->label('Cetak Label')
+                            ->icon(Heroicon::OutlinedPrinter)
+                            ->color('info')
+                            ->modalHeading(fn (Asset $record): string => 'Cetak Stiker Label - '.$record->asset_code)
+                            ->modalWidth(Width::Medium)
+                            ->modalContent(fn (Asset $record) => view('filament.resources.assets.print-label-modal', [
+                                'record' => $record,
+                            ]))
+                            ->modalSubmitAction(false)
+                            ->modalCancelActionLabel('Tutup'),
+                    ]),
                 Action::make('print_label')
                     ->label('Cetak Label')
                     ->icon(Heroicon::OutlinedPrinter)

@@ -13,6 +13,7 @@ class StockMutation extends Model
     protected $fillable = [
         'supply_id',
         'room_id',
+        'recipient_name',
         'type',
         'quantity',
         'stock_before',

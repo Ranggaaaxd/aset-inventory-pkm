@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Filament\Widgets\AssetConditionChartWidget;
+use App\Filament\Widgets\LatestMutationsWidget;
 use App\Filament\Widgets\MonthlySupplyUsageChartWidget;
 use App\Filament\Widgets\StatsOverviewWidget;
 use App\Models\Asset;
@@ -21,7 +22,8 @@ class DashboardChartWidgetTest extends TestCase
     {
         $this->assertSame(1, StatsOverviewWidget::getSort());
         $this->assertSame(2, AssetConditionChartWidget::getSort());
-        $this->assertSame(3, MonthlySupplyUsageChartWidget::getSort());
+        $this->assertSame(3, LatestMutationsWidget::getSort());
+        $this->assertSame(99, MonthlySupplyUsageChartWidget::getSort());
     }
 
     protected function tearDown(): void
@@ -73,6 +75,31 @@ class DashboardChartWidgetTest extends TestCase
         $this->assertCount(12, $data['labels']);
         $this->assertSame(7, $data['datasets'][0]['data'][0]);
         $this->assertSame(array_fill(0, 11, 0), array_slice($data['datasets'][0]['data'], 1));
+    }
+
+    public function test_latest_mutations_widget_returns_only_the_five_most_recent_mutations(): void
+    {
+        $supply = Supply::create([
+            'item_code' => 'ATK-002',
+            'name' => 'Pulpen',
+            'stock' => 100,
+        ]);
+
+        foreach (range(1, 6) as $quantity) {
+            StockMutation::create([
+                'supply_id' => $supply->id,
+                'type' => 'out',
+                'quantity' => $quantity,
+                'mutation_date' => today(),
+            ]);
+        }
+
+        $widget = new LatestMutationsWidget;
+        $method = new ReflectionMethod($widget, 'getTableQuery');
+        $mutations = $method->invoke($widget)->get();
+
+        $this->assertCount(5, $mutations);
+        $this->assertSame([6, 5, 4, 3, 2], $mutations->pluck('quantity')->all());
     }
 
     private function getWidgetData(string $widgetClass): array

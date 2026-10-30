@@ -19,11 +19,19 @@ class StockMutationsTable
     public static function configure(Table $table): Table
     {
         return $table
+            ->emptyStateHeading('Belum Ada Riwayat Mutasi')
+            ->emptyStateDescription('Catatan mutasi pengadaan barang masuk dan pemakaian ATK keluar akan tercatat otomatis di sini.')
+            ->emptyStateIcon('heroicon-o-arrows-right-left')
             ->columns([
                 TextColumn::make('supply.name')
                     ->searchable(),
                 TextColumn::make('room.name')
+                    ->label('Ruangan / Lokasi')
                     ->searchable(),
+                TextColumn::make('recipient_name')
+                    ->label('Penerima / Supplier')
+                    ->searchable()
+                    ->placeholder('-'),
                 TextColumn::make('type')
                     ->badge()
                     ->color(fn (string $state): string => match (strtolower($state)) {
@@ -32,8 +40,8 @@ class StockMutationsTable
                         default => 'gray',
                     })
                     ->formatStateUsing(fn (string $state): string => match (strtolower($state)) {
-                        'in' => 'IN',
-                        'out' => 'OUT',
+                        'in' => 'Masuk',
+                        'out' => 'Keluar',
                         default => strtoupper($state),
                     }),
                 TextColumn::make('quantity')
@@ -73,10 +81,10 @@ class StockMutationsTable
                         ->color('info')
                         ->action(fn ($livewire) => ExportService::exportStockMutations($livewire->getFilteredTableQuery(), 'csv')),
                 ])
-                ->label('Ekspor Rekap ATK')
-                ->icon(Heroicon::OutlinedArrowDownTray)
-                ->color('primary')
-                ->button(),
+                    ->label('Ekspor Rekap ATK')
+                    ->icon(Heroicon::OutlinedArrowDownTray)
+                    ->color('primary')
+                    ->button(),
                 Action::make('print_official_report')
                     ->label('Cetak Laporan Resmi')
                     ->icon(Heroicon::OutlinedPrinter)

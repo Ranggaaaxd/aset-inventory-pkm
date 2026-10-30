@@ -13,6 +13,8 @@ class AssetConditionChartWidget extends ChartWidget
 
     protected int|string|array $columnSpan = 1;
 
+    protected ?string $maxHeight = '270px';
+
     protected function getData(): array
     {
         $conditions = ['Baik', 'Rusak Ringan', 'Rusak Berat'];

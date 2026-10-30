@@ -42,10 +42,12 @@ class AssetLoanResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        return (string) AssetLoan::query()->where('status', 'dipinjam')->count();
+        $count = static::getModel()::where('status', 'dipinjam')->count();
+
+        return $count > 0 ? (string) $count : null;
     }
 
-    public static function getNavigationBadgeColor(): string|array|null
+    public static function getNavigationBadgeColor(): ?string
     {
         return 'warning';
     }

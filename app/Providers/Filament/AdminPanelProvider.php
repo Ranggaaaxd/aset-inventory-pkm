@@ -4,7 +4,7 @@ namespace App\Providers\Filament;
 
 use App\Filament\Pages\Auth\CustomLogin;
 use App\Filament\Widgets\AssetConditionChartWidget;
-use App\Filament\Widgets\MonthlySupplyUsageChartWidget;
+use App\Filament\Widgets\LatestMutationsWidget;
 use App\Filament\Widgets\StatsOverviewWidget;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
@@ -74,7 +74,7 @@ class AdminPanelProvider extends PanelProvider
             ->widgets([
                 StatsOverviewWidget::class,
                 AssetConditionChartWidget::class,
-                MonthlySupplyUsageChartWidget::class,
+                LatestMutationsWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,

@@ -17,6 +17,9 @@ class AssetLoansTable
     public static function configure(Table $table): Table
     {
         return $table
+            ->emptyStateHeading('Semua Fasilitas Kantor Aman')
+            ->emptyStateDescription('Saat ini tidak ada aset atau peralatan kantor yang sedang dipinjam oleh staf.')
+            ->emptyStateIcon('heroicon-o-shield-check')
             ->columns([
                 TextColumn::make('borrower_name')
                     ->label('Nama Peminjam')
