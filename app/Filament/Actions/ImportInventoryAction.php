@@ -61,7 +61,7 @@ class ImportInventoryAction
 
                 Notification::make()
                     ->title('Impor berhasil')
-                    ->body("{$importedRows} baris {$label} berhasil diproses.")
+                    ->body("Jumlah berhasil diimpor: {$importedRows} {$label}.")
                     ->success()
                     ->send();
             });

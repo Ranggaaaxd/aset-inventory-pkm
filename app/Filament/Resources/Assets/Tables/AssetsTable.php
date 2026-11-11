@@ -4,7 +4,7 @@ namespace App\Filament\Resources\Assets\Tables;
 
 use App\Filament\Actions\ImportInventoryAction;
 use App\Models\Asset;
-use App\Services\CsvTemplateDownload;
+use App\Services\AssetTemplateDownload;
 use App\Services\ExportService;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
@@ -174,11 +174,7 @@ class AssetsTable
                     ->label('Unduh Template Excel')
                     ->icon(Heroicon::OutlinedDocumentArrowDown)
                     ->color('gray')
-                    ->action(fn () => CsvTemplateDownload::download(
-                        'template_aset_pkm.csv',
-                        ['name', 'category_name', 'room_name', 'brand', 'condition', 'price', 'status', 'pic_name'],
-                        ['Proyektor Epson', 'Elektronik', 'Ruang Rapat', 'Epson', 'Baik', '5000000', 'Digunakan', 'Siti Rahma'],
-                    )),
+                    ->action(fn () => AssetTemplateDownload::download()),
                 ImportInventoryAction::assets(),
             ])
             ->recordActions([

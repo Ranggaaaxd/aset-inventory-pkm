@@ -14,7 +14,7 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use OpenSpout\Reader\CSV\Options as CsvOptions;
 use OpenSpout\Reader\CSV\Reader as CsvReader;
-use OpenSpout\Reader\XLSX\Reader as XlsxReader;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class InventorySpreadsheetImporter
 {
@@ -69,73 +69,105 @@ class InventorySpreadsheetImporter
      */
     private function import(string $path, string $extension, string $modelClass, array $headers, string $type): int
     {
-        $reader = match (strtolower($extension)) {
-            'csv' => new CsvReader($this->csvOptions($path)),
-            'xlsx' => new XlsxReader,
-            default => throw ValidationException::withMessages([
+        if (strtolower($extension) === 'xlsx') {
+            $reader = IOFactory::createReaderForFile($path);
+            $reader->setReadDataOnly(false);
+            $spreadsheet = $reader->load($path);
+
+            try {
+                return $this->importRows(
+                    $spreadsheet->getActiveSheet()->toArray(null, true, true, false),
+                    $modelClass,
+                    $headers,
+                    $type,
+                );
+            } finally {
+                $spreadsheet->disconnectWorksheets();
+            }
+        }
+
+        if (strtolower($extension) !== 'csv') {
+            throw ValidationException::withMessages([
                 'file' => 'Format file tidak didukung. Gunakan CSV atau XLSX.',
-            ]),
-        };
+            ]);
+        }
+
+        $reader = new CsvReader($this->csvOptions($path));
         $reader->open($path);
 
         try {
-            return DB::transaction(function () use ($reader, $modelClass, $headers, $type): int {
-                $imported = 0;
-                $hasHeader = false;
-                $rowNumber = 0;
-
+            $rows = (function () use ($reader): \Generator {
                 foreach ($reader->getSheetIterator() as $sheet) {
                     foreach ($sheet->getRowIterator() as $row) {
-                        $rowNumber++;
-                        $values = $row->toArray();
-
-                        if (! $hasHeader) {
-                            $headersByColumn = $this->mapHeaders($values, $headers);
-                            $hasHeader = true;
-
-                            if (! in_array('name', $headersByColumn, true)) {
-                                throw ValidationException::withMessages([
-                                    'file' => 'File impor harus memiliki kolom nama barang (name atau Nama Barang).',
-                                ]);
-                            }
-
-                            continue;
-                        }
-
-                        $data = [];
-                        foreach ($headersByColumn as $index => $attribute) {
-                            if ($attribute === null || ! array_key_exists($index, $values)) {
-                                continue;
-                            }
-
-                            $value = $this->normalizeValue($values[$index], $rowNumber);
-                            if ($value !== null) {
-                                $data[$attribute] = $value;
-                            }
-                        }
-
-                        if (empty(array_filter($data, fn (mixed $value): bool => $value !== null && $value !== ''))) {
-                            continue;
-                        }
-
-                        $this->importRow($modelClass, $data, $type, $rowNumber);
-                        $imported++;
+                        yield $row->toArray();
                     }
 
                     break;
                 }
+            })();
 
-                if (! $hasHeader) {
-                    throw ValidationException::withMessages([
-                        'file' => 'File impor kosong atau tidak memiliki baris header.',
-                    ]);
-                }
-
-                return $imported;
-            });
+            return $this->importRows($rows, $modelClass, $headers, $type);
         } finally {
             $reader->close();
         }
+    }
+
+    /**
+     * @param  iterable<array<mixed>>  $rows
+     * @param  class-string<Asset|Supply>  $modelClass
+     * @param  array<string, array<string>>  $headers
+     */
+    private function importRows(iterable $rows, string $modelClass, array $headers, string $type): int
+    {
+        return DB::transaction(function () use ($rows, $modelClass, $headers, $type): int {
+            $imported = 0;
+            $hasHeader = false;
+            $rowNumber = 0;
+
+            foreach ($rows as $values) {
+                $rowNumber++;
+
+                if (! $hasHeader) {
+                    $headersByColumn = $this->mapHeaders($values, $headers);
+                    $hasHeader = true;
+
+                    if (! in_array('name', $headersByColumn, true)) {
+                        throw ValidationException::withMessages([
+                            'file' => 'File impor harus memiliki kolom nama barang (name atau Nama Barang).',
+                        ]);
+                    }
+
+                    continue;
+                }
+
+                $data = [];
+                foreach ($headersByColumn as $index => $attribute) {
+                    if ($attribute === null || ! array_key_exists($index, $values)) {
+                        continue;
+                    }
+
+                    $value = $this->normalizeValue($values[$index], $rowNumber);
+                    if ($value !== null) {
+                        $data[$attribute] = $value;
+                    }
+                }
+
+                if (empty(array_filter($data, fn (mixed $value): bool => $value !== null && $value !== ''))) {
+                    continue;
+                }
+
+                $this->importRow($modelClass, $data, $type, $rowNumber);
+                $imported++;
+            }
+
+            if (! $hasHeader) {
+                throw ValidationException::withMessages([
+                    'file' => 'File impor kosong atau tidak memiliki baris header.',
+                ]);
+            }
+
+            return $imported;
+        });
     }
 
     private function csvOptions(string $path): CsvOptions
@@ -242,11 +274,25 @@ class InventorySpreadsheetImporter
      */
     private function importRow(string $modelClass, array $data, string $type, int $rowNumber): void
     {
+        if ($type === 'asset') {
+            $taxGroup = mb_strtolower(trim((string) ($data['tax_group'] ?? '')));
+            $data['useful_life_years'] = match (true) {
+                str_contains($taxGroup, 'golongan 1') => 4,
+                str_contains($taxGroup, 'golongan 2') => 8,
+                default => 0,
+            };
+        }
+
         if (array_key_exists('category_name', $data)) {
-            $category = Category::query()
-                ->where('name', $data['category_name'])
+            $categoryName = trim((string) $data['category_name']);
+            $categoryQuery = Category::query()
                 ->whereIn('type', [$type, 'all'])
-                ->first();
+                ->whereRaw('LOWER(name) = ?', [mb_strtolower($categoryName)]);
+            $category = $categoryQuery->first()
+                ?? Category::query()
+                    ->whereIn('type', [$type, 'all'])
+                    ->whereRaw('LOWER(name) LIKE ?', ['%'.mb_strtolower($categoryName).'%'])
+                    ->first();
             if (! $category) {
                 $this->throwRowError($rowNumber, "Kategori [{$data['category_name']}] tidak ditemukan.");
             }
@@ -255,7 +301,13 @@ class InventorySpreadsheetImporter
         }
 
         if (array_key_exists('room_name', $data)) {
-            $room = Room::query()->where('name', $data['room_name'])->first();
+            $roomName = trim((string) $data['room_name']);
+            $room = Room::query()
+                ->whereRaw('LOWER(name) = ?', [mb_strtolower($roomName)])
+                ->first()
+                ?? Room::query()
+                    ->whereRaw('LOWER(name) LIKE ?', ['%'.mb_strtolower($roomName).'%'])
+                    ->first();
             if (! $room) {
                 $this->throwRowError($rowNumber, "Ruangan [{$data['room_name']}] tidak ditemukan.");
             }
@@ -270,6 +322,11 @@ class InventorySpreadsheetImporter
         }
 
         $identifier = $type === 'asset' ? 'asset_code' : 'item_code';
+        if ($type === 'asset' && blank($data[$identifier] ?? null)) {
+            do {
+                $data[$identifier] = Asset::generateNextAssetCode();
+            } while (Asset::query()->where($identifier, $data[$identifier])->exists());
+        }
         $identifierValue = $data[$identifier] ?? null;
 
         $rules = $type === 'asset'
